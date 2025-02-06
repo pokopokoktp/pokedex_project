@@ -11,6 +11,8 @@ import os  # osモジュールをインポート
 
 app = Flask(__name__)
 
+DATABASE_URI = os.getenv("DATABASE_URL")
+
 # SECRET_KEYの設定
 app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # 環境変数から取得、ない場合はランダム生成
 
