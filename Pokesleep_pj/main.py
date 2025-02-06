@@ -30,9 +30,10 @@ login_manager.login_view = 'login'
 def load_user(user_id):
     try:
         with SessionLocal() as session_db:
-            user = session_db.query(User).get(int(user_id))
+            user = session_db.get(User, int(user_id))  # session.get() を使用
         return user
     except Exception as e:
+        app.logger.error(f"ユーザーのロード中にエラー: {str(e)}")
         flash(f"エラーが発生しました: {str(e)}", 'error')
         return None
 
@@ -49,18 +50,15 @@ def login():
         username = request.form['username']
         password = request.form['password']
 
-        session_db = SessionLocal()
-        user = session_db.query(User).filter(User.username == username).first()
+        with SessionLocal() as session_db:
+            user = session_db.query(User).filter(User.username == username).first()
 
-        if user and check_password_hash(user.password, password):  # パスワードチェック
-            login_user(user)
-            session_db.close()
-            flash('ログインに成功しました！')
-            return redirect(url_for('home'))  # ログイン後にホーム画面にリダイレクト
-        else:
-            flash('ユーザー名またはパスワードが正しくありません')
-
-        session_db.close()
+            if user and check_password_hash(user.password, password):
+                login_user(user)
+                flash('ログインに成功しました！')
+                return redirect(url_for('home'))  # ログイン後にホーム画面にリダイレクト
+            else:
+                flash('ユーザー名またはパスワードが正しくありません')
 
     return render_template('login.html')
 
@@ -85,16 +83,15 @@ def pokemon_list():
         with SessionLocal() as session_db:
             pokemons = get_pokemon_list(session_db)
             user_pokemons = get_user_pokemons(session_db, current_user.id)
-            caught_pokemon_ids = [up.pokemon_id for up in user_pokemons]  # user_pokemons の ID を取得
+            caught_pokemon_ids = [up.id for up in user_pokemons]  # Pokemonのidを参照
 
-            # ユーザーが獲得したポケモンの名前をリストとして取得
             user_pokemon_names = [pokemon.name for pokemon in user_pokemons]
-            
-            print(f"全ポケモン: {[pokemon.name for pokemon in pokemons]}")
-            print(f"ユーザーが獲得したポケモン: {user_pokemon_names}")
-            
+            app.logger.info(f"全ポケモン: {[pokemon.name for pokemon in pokemons]}")
+            app.logger.info(f"ユーザーが獲得したポケモン: {user_pokemon_names}")
+
         return render_template('pokemon_list.html', pokemons=pokemons, caught_pokemon_ids=caught_pokemon_ids)
     except Exception as e:
+        app.logger.error(f"ポケモンリスト取得中にエラー: {str(e)}")
         flash(f"エラーが発生しました: {str(e)}", 'error')
         return redirect(url_for('home'))
 
@@ -106,8 +103,9 @@ def catch_pokemon_route(pokemon_id):
         with SessionLocal() as session_db:
             catch_pokemon(session_db, current_user.id, pokemon_id)
         flash('ポケモンを獲得しました！', 'success')
-        return redirect(url_for('pokemon_list'))  # ポケモン一覧にリダイレクト
+        return redirect(url_for('pokemon_list'))
     except Exception as e:
+        app.logger.error(f"ポケモン獲得中にエラー: {str(e)}")
         flash(f"ポケモンを獲得できませんでした: {str(e)}", 'error')
         return redirect(url_for('pokemon_list'))
 
@@ -116,44 +114,38 @@ def admin_required(func):
     from functools import wraps
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if not current_user.is_admin:
+        if not hasattr(current_user, 'is_admin') or not current_user.is_admin:
             flash("管理者権限が必要です。", 'error')
             return redirect(url_for('home'))
         return func(*args, **kwargs)
     return wrapper
 
 @app.route('/add_pokemon', methods=['GET', 'POST'])
-@admin_required  # 管理者専用のデコレーター
+@admin_required
 def add_pokemon():
     if request.method == 'POST':
-        # フォームデータの取得
         name = request.form['name']
-        number = int(request.form['number'])  # 手動で入力された番号
+        number = int(request.form['number'])
         sleep_type = request.form['sleep_type']
         specialty = request.form['specialty']
         main_skill = request.form['main_skill']
 
-        # バリデーション: すべてのフィールドが入力されているかをチェック
         if not name or not sleep_type or not specialty or not main_skill or not number:
             flash('すべてのフィールドを入力してください。', 'error')
-            return render_template('add_pokemon.html')  # エラーメッセージとともに再表示
+            return render_template('add_pokemon.html')
 
-        # データベース接続
-        session_db = SessionLocal()
+        with SessionLocal() as session_db:
+            try:
+                create_pokemon(session_db, name, number, sleep_type, specialty, main_skill)
+                session_db.commit()
+                flash('ポケモンを追加しました！')
+            except Exception as e:
+                app.logger.error(f"ポケモン追加中にエラー: {str(e)}")
+                flash(f"エラーが発生しました: {str(e)}", 'error')
 
-        try:
-            # ポケモンを追加
-            create_pokemon(session_db, name, number, sleep_type, specialty, main_skill)
-            flash('ポケモンを追加しました！')
-            session_db.commit()  # コミットして変更を保存
-        except Exception as e:
-            flash(f"エラーが発生しました: {str(e)}", 'error')
-        finally:
-            session_db.close()  # セッションを閉じる
+        return redirect(url_for('pokemon_list'))
 
-        return redirect(url_for('pokemon_list'))  # ポケモンリストにリダイレクト
-
-    return render_template('add_pokemon.html')  # 管理者用のポケモン追加フォーム
+    return render_template('add_pokemon.html')
 
 # ユーザー登録機能
 @app.route('/register', methods=['GET', 'POST'])
@@ -163,16 +155,13 @@ def register():
         password = request.form['password']
         hashed_password = generate_password_hash(password, method='scrypt', salt_length=16)
 
-        session_db = SessionLocal()
-        if session_db.query(User).filter(User.username == username).first():
-            flash('すでに存在するユーザー名です。')
-        else:
-            create_user(session_db, username, hashed_password)
-            flash('ユーザー登録が完了しました！')
-            session_db.close()
-            return redirect(url_for('login'))
-
-        session_db.close()
+        with SessionLocal() as session_db:
+            if session_db.query(User).filter(User.username == username).first():
+                flash('すでに存在するユーザー名です。')
+            else:
+                create_user(session_db, username, hashed_password)
+                flash('ユーザー登録が完了しました！')
+                return redirect(url_for('login'))
 
     return render_template('register.html')
 
@@ -185,6 +174,7 @@ def view_diaries():
             diaries = session_db.query(SleepDiary).filter(SleepDiary.user_id == current_user.id).all()
         return render_template('sleep_diary_list.html', diaries=diaries)
     except Exception as e:
+        app.logger.error(f"睡眠日記取得中にエラー: {str(e)}")
         flash(f"エラーが発生しました: {str(e)}", 'error')
         return redirect(url_for('home'))
 
