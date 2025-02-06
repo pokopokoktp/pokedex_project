@@ -6,15 +6,19 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User, Pokemon, UserPokemon, SleepDiary, db
 from .crud import create_user, create_pokemon, get_pokemon_list, catch_pokemon, create_sleep_diary, get_user_pokemons
 from .database import SessionLocal, engine
- 
+from . import config  # config.pyをインポート
+import os  # osモジュールをインポート
 
 app = Flask(__name__)
 
-# ✅ 固定のシークレットキー（デバッグしやすい） 
-app.secret_key = 'your_secret_key'  # 固定キーでOK。os.urandomは削除。
+# SECRET_KEYの設定
+app.secret_key = os.getenv('SECRET_KEY', os.urandom(24))  # 環境変数から取得、ない場合はランダム生成
+
+# config.pyから設定を読み込む
+app.config.from_object(config)
 
 # DBマイグレーション
-migrate = Migrate(app, engine)
+migrate = Migrate(app, db)
 
 # Flask-Login の初期化
 login_manager = LoginManager()
@@ -48,11 +52,11 @@ def login():
         session_db = SessionLocal()
         user = session_db.query(User).filter(User.username == username).first()
 
-        if user and user.check_password(password):  # 修正
+        if user and check_password_hash(user.password, password):  # パスワードチェック
             login_user(user)
             session_db.close()
             flash('ログインに成功しました！')
-            return redirect(url_for('home'))
+            return redirect(url_for('home'))  # ログイン後にホーム画面にリダイレクト
         else:
             flash('ユーザー名またはパスワードが正しくありません')
 
@@ -81,7 +85,7 @@ def pokemon_list():
         with SessionLocal() as session_db:
             pokemons = get_pokemon_list(session_db)
             user_pokemons = get_user_pokemons(session_db, current_user.id)
-            caught_pokemon_ids = [up.id for up in user_pokemons]  # user_pokemons の ID を取得
+            caught_pokemon_ids = [up.pokemon_id for up in user_pokemons]  # user_pokemons の ID を取得
 
             # ユーザーが獲得したポケモンの名前をリストとして取得
             user_pokemon_names = [pokemon.name for pokemon in user_pokemons]
