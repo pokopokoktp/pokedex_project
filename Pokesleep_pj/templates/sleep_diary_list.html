@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sleep Diary</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #eef2f7;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #3b5998;
+        }
+
+        .diary-entry {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #3b5998;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #2d4373;
+            }
+    </style>
+</head>
+<body>
+    <h1>Your Sleep Diary</h1>
+
+    {% for diary in diaries %}
+    <div class="diary-entry">
+        <h2>Date: {{ diary.date }}</h2>
+        <p>Sleep Quality: {{ diary.sleep_quality }}</p>
+        <p>Memo: {{ diary.memo }}</p>
+    </div>
+    {% endfor %}
+
+    <h2>Add New Entry:</h2>
+    <form action="/add_sleep_diary" method="POST">
+        <input type="hidden" name="user_id" value="1">  <!-- ���̃��[�U�[ID -->
+        <label>Date: <input type="date" name="date" required></label><br>
+        <label>Sleep Quality: <input type="text" name="sleep_quality" required></label><br>
+        <label>Memo: <textarea name="memo" required></textarea></label><br>
+        <button type="submit">Add Entry</button>
+    </form>
+</body>
+</html>
