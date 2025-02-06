@@ -1,5 +1,5 @@
 ﻿from sqlalchemy.orm import Session
-from models import User, Pokemon, UserPokemon, SleepDiary
+from .models import User, Pokemon, UserPokemon, SleepDiary
 from werkzeug.security import generate_password_hash
 
 # ユーザーの追加
