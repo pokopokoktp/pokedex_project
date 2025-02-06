@@ -5,10 +5,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', os.urandom(24))  # 環境変数から秘密鍵を取得
 
     # データベース接続設定
-    # RenderでのデータベースURLを環境変数から取得、デフォルトにSSLモードを追加
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'DATABASE_URL',
-        'postgresql://pokesleep_db_user:g6qrdTzAzjwViN7ywKbHEN1gjbpxZOmC@dpg-cuibpp2j1k6c73as74tg-a.singapore-postgres.render.com/pokesleep_db'
+        'postgresql://localhost/pokesleep_db'  # ローカル開発用データベースURL
     )
 
     # SQLAlchemyの設定
