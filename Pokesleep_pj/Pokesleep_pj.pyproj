@@ -32,6 +32,7 @@
     <Compile Include="migrations\versions\307a622107d1_initial_migration.py" />
     <Compile Include="models.py" />
     <Compile Include="Pokesleep_pj.py" />
+    <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="migrations\" />

@@ -3,7 +3,7 @@ from flask import Flask, request, render_template, redirect, url_for, session, f
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user 
 from flask_migrate import Migrate 
 from werkzeug.security import generate_password_hash, check_password_hash 
-from models import User, Pokemon, UserPokemon, SleepDiary, db
+from models import User, Pokemon, UserPokemon, SleepDiary, db  # インポートパス修正
 from crud import create_user, create_pokemon, get_pokemon_list, catch_pokemon, create_sleep_diary, get_user_pokemons
 from database import SessionLocal, engine 
 
