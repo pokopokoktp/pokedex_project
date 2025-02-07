@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*- 
+﻿# -*- coding: utf-8 -*-  
 from flask import Flask, request, render_template, redirect, url_for, session, flash 
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user 
 from flask_migrate import Migrate 
@@ -89,7 +89,7 @@ def pokemon_list():
 
             user_pokemon_names = [pokemon.name for pokemon in user_pokemons]
             app.logger.info(f"全ポケモン: {[pokemon.name for pokemon in pokemons]}")
-            app.logger.info(f"ユーザーが獲得したポケモン: {user_pokemon_names}")
+            app.logger.info(f"ユーザーが獲得したポケモン: {user_pokemon_names}.")
 
         return render_template('pokemon_list.html', pokemons=pokemons, caught_pokemon_ids=caught_pokemon_ids)
     except Exception as e:
@@ -167,10 +167,10 @@ def register():
 
     return render_template('register.html')
 
-# 睡眠日記の表示
-@app.route('/view_diaries')
+# 睡眠日記のリスト表示
+@app.route('/sleep_diary_list', methods=['GET'])
 @login_required
-def view_diaries():
+def sleep_diary_list():
     try:
         with SessionLocal() as session_db:
             diaries = session_db.query(SleepDiary).filter(SleepDiary.user_id == current_user.id).all()
@@ -179,6 +179,33 @@ def view_diaries():
         app.logger.error(f"睡眠日記取得中にエラー: {str(e)}")
         flash(f"エラーが発生しました: {str(e)}", 'error')
         return redirect(url_for('home'))
+
+# 睡眠日記の追加
+@app.route('/add_sleep_diary', methods=['GET', 'POST'])
+@login_required
+def add_sleep_diary():
+    if request.method == 'POST':
+        # フォームのデータを取得
+        date = request.form.get('date')
+        sleep_quality = request.form.get('sleep_quality')
+        memo = request.form.get('memo')
+
+        # 必須項目のチェック
+        if not date or not sleep_quality:
+            flash('日付と睡眠の質は必須項目です。', 'error')
+            return redirect(url_for('add_sleep_diary'))  # フォームを再表示
+
+        try:
+            # 日記の作成
+            with SessionLocal() as session_db:
+                create_sleep_diary(session_db, current_user.id, date, sleep_quality, memo)
+                flash('睡眠日記を追加しました！', 'success')
+                return redirect(url_for('sleep_diary_list'))  # 日記リストにリダイレクト
+        except Exception as e:
+            app.logger.error(f"睡眠日記追加中にエラー: {str(e)}")
+            flash(f"エラーが発生しました: {str(e)}", 'error')
+
+    return render_template('add_sleep_diary.html')  # 新しい日記を追加するフォームを返す
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))

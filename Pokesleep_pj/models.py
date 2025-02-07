@@ -1,11 +1,11 @@
 ﻿from flask_sqlalchemy import SQLAlchemy
-from flask_login import UserMixin  # UserMixin をインポート
+from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # dbインスタンスを作成
 db = SQLAlchemy()
 
-class User(db.Model, UserMixin):  # UserMixin を継承
+class User(db.Model, UserMixin):
     __tablename__ = 'user'
 
     id = db.Column(db.Integer, primary_key=True, index=True)
@@ -23,15 +23,13 @@ class User(db.Model, UserMixin):  # UserMixin を継承
 class Pokemon(db.Model):
     __tablename__ = 'pokemon'
 
-    # idはプライマリーキーとして自動生成される
     id = db.Column(db.Integer, primary_key=True)
-    number = db.Column(db.Integer, unique=True, nullable=False)  # numberフィールドを追加
+    number = db.Column(db.Integer, unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     sleep_type = db.Column(db.String(50), nullable=False)
     specialty = db.Column(db.String(50), nullable=False)
     main_skill = db.Column(db.String(100), nullable=False)
 
-    # UserPokemon と SleepDiary とのリレーションを追加
     owners = db.relationship("UserPokemon", back_populates="pokemon")
 
 class UserPokemon(db.Model):

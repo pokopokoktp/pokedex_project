@@ -1,17 +1,25 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Sleep Diary</title>
+    <title>睡眠日記一覧 - Pokesleep</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #eef2f7;
+            background-color: #f4f4f9;
             padding: 20px;
         }
 
-        h1 {
-            color: #3b5998;
+        h1, h2 {
+            color: #4CAF50;
+        }
+
+        .diary-container {
+            display: grid;
+            grid-template-columns: repeat(1, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .diary-entry {
@@ -19,41 +27,54 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin-bottom: 15px;
         }
 
-        button {
-            background-color: #3b5998;
+            .diary-entry h2 {
+                margin: 0;
+                color: #4CAF50;
+            }
+
+            .diary-entry p {
+                margin: 10px 0;
+            }
+
+        .button {
+            background-color: #007bff;
             color: white;
             padding: 8px 12px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            margin-top: 20px;
+            display: inline-block;
+            text-decoration: none;
         }
 
-            button:hover {
-                background-color: #2d4373;
+            .button:hover {
+                background-color: #0056b3;
             }
     </style>
 </head>
 <body>
-    <h1>Your Sleep Diary</h1>
+    <a href="/" class="button">Homeに戻る</a>
 
-    {% for diary in diaries %}
-    <div class="diary-entry">
-        <h2>Date: {{ diary.date }}</h2>
-        <p>Sleep Quality: {{ diary.sleep_quality }}</p>
-        <p>Memo: {{ diary.memo }}</p>
+    <h1>睡眠日記一覧</h1>
+
+    <h2>日記リスト:</h2>
+
+    <div class="diary-container">
+        {% for diary in diaries %}
+        <div class="diary-entry">
+            <h2>日付: {{ diary.date.strftime('%Y-%m-%d') }}</h2>
+            <p>睡眠の質: {{ diary.sleep_quality }}</p>
+            <p>メモ: {{ diary.memo }}</p>
+        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 
-    <h2>Add New Entry:</h2>
-    <form action="/add_sleep_diary" method="POST">
-        <input type="hidden" name="user_id" value="1">  <!-- ���̃��[�U�[ID -->
-        <label>Date: <input type="date" name="date" required></label><br>
-        <label>Sleep Quality: <input type="text" name="sleep_quality" required></label><br>
-        <label>Memo: <textarea name="memo" required></textarea></label><br>
-        <button type="submit">Add Entry</button>
-    </form>
+    <!-- 新しい日記を追加するボタン -->
+    <div>
+        <a href="/add_sleep_diary" class="button">新しい日記を追加</a>
+    </div>
 </body>
 </html>
